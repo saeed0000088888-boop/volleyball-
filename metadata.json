@@ -1,0 +1,6 @@
+{
+  "name": "College Volleyball Tournament Management",
+  "description": "Complete, modern, mobile-responsive collegiate volleyball tournament management platform with public registration, live fixtures, points tables, and secure admin operations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
