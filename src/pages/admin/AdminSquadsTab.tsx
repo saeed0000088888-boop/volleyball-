@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Team, Player } from '../../types';
 import { supabaseService } from '../../lib/supabase';
+import { ConfirmModal } from '../../components/ConfirmModal';
 
 interface AdminSquadsTabProps {
   teams: Team[];
@@ -27,6 +28,7 @@ export const AdminSquadsTab: React.FC<AdminSquadsTabProps> = ({
   const [selectedTeamId, setSelectedTeamId] = useState<string>(teams[0]?.id || '');
   const [selectedAddPlayerId, setSelectedAddPlayerId] = useState<string>('');
   const [assignJersey, setAssignJersey] = useState<number>(10);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const currentTeam = teams.find(t => t.id === selectedTeamId) || teams[0];
   const squad = currentTeam ? players.filter(p => p.team_id === currentTeam.id) : [];
@@ -50,27 +52,28 @@ export const AdminSquadsTab: React.FC<AdminSquadsTabProps> = ({
     }
   };
 
-  const handleRemovePlayer = async (playerId: string) => {
-    if (window.confirm('Remove this player from the team squad? They will return to the free agent pool.')) {
-      try {
-        await supabaseService.updatePlayer(playerId, {
-          team_id: null,
-          status: 'Available',
-          is_captain: false,
+  const handleConfirmRemove = async () => {
+    if (!deleteTargetId) return;
+    const playerId = deleteTargetId;
+    setDeleteTargetId(null);
+    try {
+      await supabaseService.updatePlayer(playerId, {
+        team_id: null,
+        status: 'Available',
+        is_captain: false,
+      });
+
+      // If this player was captain, clear captain_id on team
+      if (currentTeam?.captain_id === playerId) {
+        await supabaseService.updateTeam(currentTeam.id, {
+          captain_id: undefined,
+          captain_name: undefined,
         });
-
-        // If this player was captain, clear captain_id on team
-        if (currentTeam?.captain_id === playerId) {
-          await supabaseService.updateTeam(currentTeam.id, {
-            captain_id: undefined,
-            captain_name: undefined,
-          });
-        }
-
-        onDataChanged();
-      } catch (err) {
-        console.error(err);
       }
+
+      onDataChanged();
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -227,7 +230,7 @@ export const AdminSquadsTab: React.FC<AdminSquadsTabProps> = ({
                       </td>
                       <td className="py-3 px-3 text-right">
                         <button
-                          onClick={() => handleRemovePlayer(player.id)}
+                          onClick={() => setDeleteTargetId(player.id)}
                           title="Unassign from team"
                           className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition"
                         >
@@ -314,6 +317,17 @@ export const AdminSquadsTab: React.FC<AdminSquadsTabProps> = ({
           </div>
         </div>
       </div>
+
+      {/* CONFIRM REMOVE MODAL */}
+      <ConfirmModal
+        isOpen={Boolean(deleteTargetId)}
+        title="Remove Athlete from Squad"
+        message="Are you sure you want to remove this player from the team squad? They will return to the free agent pool and can be assigned to another squad."
+        confirmText="Remove from Squad"
+        variant="warning"
+        onConfirm={handleConfirmRemove}
+        onCancel={() => setDeleteTargetId(null)}
+      />
     </div>
   );
 };

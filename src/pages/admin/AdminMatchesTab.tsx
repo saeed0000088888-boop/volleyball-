@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Match, Team, MatchStatus } from '../../types';
 import { supabaseService } from '../../lib/supabase';
+import { ConfirmModal } from '../../components/ConfirmModal';
 
 interface AdminMatchesTabProps {
   matches: Match[];
@@ -40,6 +41,8 @@ export const AdminMatchesTab: React.FC<AdminMatchesTabProps> = ({
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Form fields
   const [teamAId, setTeamAId] = useState('');
@@ -65,6 +68,7 @@ export const AdminMatchesTab: React.FC<AdminMatchesTabProps> = ({
     setRound(ROUNDS[0]);
     setStatus('Scheduled');
     setNotes('');
+    setFormError(null);
     setIsModalOpen(true);
   };
 
@@ -79,19 +83,21 @@ export const AdminMatchesTab: React.FC<AdminMatchesTabProps> = ({
     setRound(match.round);
     setStatus(match.status);
     setNotes(match.notes || '');
+    setFormError(null);
     setIsModalOpen(true);
   };
 
   const handleSaveMatch = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
 
     if (!teamAId || !teamBId) {
-      alert('Please select both teams.');
+      setFormError('Please select both teams.');
       return;
     }
 
     if (teamAId === teamBId) {
-      alert('Team A and Team B cannot be the same team.');
+      setFormError('Team A and Team B cannot be the same team.');
       return;
     }
 
@@ -128,19 +134,20 @@ export const AdminMatchesTab: React.FC<AdminMatchesTabProps> = ({
 
       onDataChanged();
       setIsModalOpen(false);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setFormError(err?.message || 'Failed to save match.');
     }
   };
 
-  const handleDeleteMatch = async (matchId: string) => {
-    if (window.confirm('Are you sure you want to delete this scheduled fixture?')) {
-      try {
-        await supabaseService.deleteMatch(matchId);
-        onDataChanged();
-      } catch (err) {
-        console.error(err);
-      }
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    const mid = deleteTargetId;
+    setDeleteTargetId(null);
+    try {
+      await supabaseService.deleteMatch(mid);
+      onDataChanged();
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -273,7 +280,7 @@ export const AdminMatchesTab: React.FC<AdminMatchesTabProps> = ({
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteMatch(match.id)}
+                            onClick={() => setDeleteTargetId(match.id)}
                             title="Delete Fixture"
                             className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition"
                           >
@@ -290,6 +297,17 @@ export const AdminMatchesTab: React.FC<AdminMatchesTabProps> = ({
         </div>
       )}
 
+      {/* CONFIRM DELETE MODAL */}
+      <ConfirmModal
+        isOpen={Boolean(deleteTargetId)}
+        title="Delete Scheduled Fixture"
+        message="Are you sure you want to delete this match fixture? Any scores or sets entered for this match will also be deleted."
+        confirmText="Delete Fixture"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteTargetId(null)}
+      />
+
       {/* CREATE / EDIT MATCH MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
@@ -305,6 +323,12 @@ export const AdminMatchesTab: React.FC<AdminMatchesTabProps> = ({
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {formError && (
+              <div className="p-3 rounded-xl bg-rose-950/50 border border-rose-800 text-rose-300 text-xs font-semibold">
+                {formError}
+              </div>
+            )}
 
             <form onSubmit={handleSaveMatch} className="space-y-4 text-xs">
               {/* Teams Matchup Selection */}

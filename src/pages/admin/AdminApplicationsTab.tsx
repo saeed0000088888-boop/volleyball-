@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { StudentApplication, ApplicationStatus } from '../../types';
 import { supabaseService } from '../../lib/supabase';
+import { ConfirmModal } from '../../components/ConfirmModal';
 
 interface AdminApplicationsTabProps {
   applications: StudentApplication[];
@@ -29,6 +30,7 @@ export const AdminApplicationsTab: React.FC<AdminApplicationsTabProps> = ({
   const [statusFilter, setStatusFilter] = useState<'All' | ApplicationStatus>('All');
   const [selectedApp, setSelectedApp] = useState<StudentApplication | null>(null);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const filtered = applications.filter(a => {
     const term = searchTerm.toLowerCase();
@@ -55,18 +57,19 @@ export const AdminApplicationsTab: React.FC<AdminApplicationsTabProps> = ({
     }
   };
 
-  const handleDelete = async (appId: string) => {
-    if (window.confirm('Are you sure you want to delete this student application record?')) {
-      setLoadingAction(`${appId}_delete`);
-      try {
-        await supabaseService.deleteApplication(appId);
-        onDataChanged();
-        if (selectedApp && selectedApp.id === appId) setSelectedApp(null);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoadingAction(null);
-      }
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    const appId = deleteTargetId;
+    setDeleteTargetId(null);
+    setLoadingAction(`${appId}_delete`);
+    try {
+      await supabaseService.deleteApplication(appId);
+      onDataChanged();
+      if (selectedApp && selectedApp.id === appId) setSelectedApp(null);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingAction(null);
     }
   };
 
@@ -229,7 +232,7 @@ export const AdminApplicationsTab: React.FC<AdminApplicationsTabProps> = ({
                           )}
 
                           <button
-                            onClick={() => handleDelete(app.id)}
+                            onClick={() => setDeleteTargetId(app.id)}
                             disabled={loadingAction === `${app.id}_delete`}
                             title="Delete record"
                             className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition"
@@ -246,6 +249,17 @@ export const AdminApplicationsTab: React.FC<AdminApplicationsTabProps> = ({
           </div>
         )}
       </div>
+
+      {/* CONFIRM DELETE MODAL */}
+      <ConfirmModal
+        isOpen={Boolean(deleteTargetId)}
+        title="Delete Student Application"
+        message="Are you sure you want to permanently delete this student application record from the portal? This action cannot be undone."
+        confirmText="Delete Application"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteTargetId(null)}
+      />
 
       {/* VIEW DETAILS MODAL */}
       {selectedApp && (

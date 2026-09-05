@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Team, Player } from '../../types';
 import { supabaseService } from '../../lib/supabase';
+import { ConfirmModal } from '../../components/ConfirmModal';
 
 interface AdminTeamsTabProps {
   teams: Team[];
@@ -34,6 +35,8 @@ export const AdminTeamsTab: React.FC<AdminTeamsTabProps> = ({
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Form fields
   const [name, setName] = useState('');
@@ -53,6 +56,7 @@ export const AdminTeamsTab: React.FC<AdminTeamsTabProps> = ({
     setDivision('Pool A');
     setConference('Collegiate Conference');
     setManagerName('');
+    setFormError(null);
     setIsModalOpen(true);
   };
 
@@ -65,14 +69,16 @@ export const AdminTeamsTab: React.FC<AdminTeamsTabProps> = ({
     setDivision(team.division || 'Pool A');
     setConference(team.conference || 'Collegiate Conference');
     setManagerName(team.manager_name || '');
+    setFormError(null);
     setIsModalOpen(true);
   };
 
   const handleSaveTeam = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
 
     if (!name.trim() || !shortCode.trim()) {
-      alert('Please fill in team name and short code.');
+      setFormError('Please fill in team name and short code.');
       return;
     }
 
@@ -101,19 +107,20 @@ export const AdminTeamsTab: React.FC<AdminTeamsTabProps> = ({
 
       onDataChanged();
       setIsModalOpen(false);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setFormError(err?.message || 'Failed to save team.');
     }
   };
 
-  const handleDeleteTeam = async (teamId: string) => {
-    if (window.confirm('Are you sure you want to delete this team? Any players assigned will become free agents.')) {
-      try {
-        await supabaseService.deleteTeam(teamId);
-        onDataChanged();
-      } catch (err) {
-        console.error(err);
-      }
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    const tid = deleteTargetId;
+    setDeleteTargetId(null);
+    try {
+      await supabaseService.deleteTeam(tid);
+      onDataChanged();
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -217,7 +224,7 @@ export const AdminTeamsTab: React.FC<AdminTeamsTabProps> = ({
                     <span>Edit</span>
                   </button>
                   <button
-                    onClick={() => handleDeleteTeam(team.id)}
+                    onClick={() => setDeleteTargetId(team.id)}
                     className="px-3 py-1.5 rounded-lg border border-rose-900/50 hover:bg-rose-950/40 text-rose-400 text-xs font-semibold flex items-center gap-1 transition"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -229,6 +236,17 @@ export const AdminTeamsTab: React.FC<AdminTeamsTabProps> = ({
           })}
         </div>
       )}
+
+      {/* CONFIRM DELETE MODAL */}
+      <ConfirmModal
+        isOpen={Boolean(deleteTargetId)}
+        title="Delete Varsity Team"
+        message="Are you sure you want to delete this team? Any players assigned to this team will be moved to the free agent pool."
+        confirmText="Delete Team"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteTargetId(null)}
+      />
 
       {/* CREATE / EDIT MODAL */}
       {isModalOpen && (
@@ -245,6 +263,12 @@ export const AdminTeamsTab: React.FC<AdminTeamsTabProps> = ({
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {formError && (
+              <div className="p-3 rounded-xl bg-rose-950/50 border border-rose-800 text-rose-300 text-xs font-semibold">
+                {formError}
+              </div>
+            )}
 
             <form onSubmit={handleSaveTeam} className="space-y-4 text-xs">
               <div>

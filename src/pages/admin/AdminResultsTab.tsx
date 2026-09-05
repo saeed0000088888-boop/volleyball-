@@ -123,7 +123,8 @@ export const AdminResultsTab: React.FC<AdminResultsTabProps> = ({
         calculatedSetsWonA,
         calculatedSetsWonB,
         calculatedWinnerId,
-        isCompleted ? 'Completed' : matchStatus
+        isCompleted ? 'Completed' : matchStatus,
+        matchNotes
       );
 
       // Recalculate standings automatically

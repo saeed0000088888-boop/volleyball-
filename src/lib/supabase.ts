@@ -1110,13 +1110,18 @@ class SupabaseService {
     });
   }
 
+  public async createPlayer(playerData: Omit<Player, 'id' | 'created_at'>): Promise<Player> {
+    return this.addPlayer(playerData);
+  }
+
   public async updateMatchResults(
     matchId: string,
     setScores: { set_number: number; score_a: number; score_b: number }[],
     setsWonA: number,
     setsWonB: number,
     winnerId?: string,
-    status: 'Completed' | 'Live' | 'Scheduled' = 'Completed'
+    status: 'Completed' | 'Live' | 'Scheduled' = 'Completed',
+    notes?: string
   ): Promise<Match | null> {
     return this.updateMatch(matchId, {
       set_scores: setScores,
@@ -1124,6 +1129,7 @@ class SupabaseService {
       sets_won_b: setsWonB,
       winner_id: winnerId || null,
       status,
+      ...(notes !== undefined && { notes }),
     });
   }
 
