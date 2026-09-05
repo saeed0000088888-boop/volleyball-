@@ -43,6 +43,7 @@ export default function App() {
   const [standings, setStandings] = useState<TeamStanding[]>([]);
   const [applications, setApplications] = useState<StudentApplication[]>([]);
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+  const [sessionNotice, setSessionNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Load all tournament data from Supabase / local persistence
@@ -100,14 +101,51 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage]);
 
+  // Security: Auto-logout after 15 minutes of idle inactivity
+  useEffect(() => {
+    if (!adminUser) return;
+
+    let lastActive = Date.now();
+
+    const handleActivity = () => {
+      lastActive = Date.now();
+      supabaseService.touchAdminSession();
+    };
+
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach((evt) => window.addEventListener(evt, handleActivity, { passive: true }));
+
+    // Periodic check every 15 seconds
+    const interval = setInterval(() => {
+      const idleTime = Date.now() - lastActive;
+      const MAX_IDLE = 15 * 60 * 1000; // 15 minutes
+
+      if (idleTime > MAX_IDLE) {
+        supabaseService.signOut();
+        setAdminUser(null);
+        setSessionNotice('Your admin session timed out due to 15 minutes of inactivity for security.');
+        if (currentPage === 'admin') {
+          setCurrentPage('admin-login');
+        }
+      }
+    }, 15000);
+
+    return () => {
+      events.forEach((evt) => window.removeEventListener(evt, handleActivity));
+      clearInterval(interval);
+    };
+  }, [adminUser, currentPage]);
+
   const handleLogout = async () => {
     await supabaseService.signOut();
     setAdminUser(null);
+    setSessionNotice(null);
     setCurrentPage('home');
   };
 
   const handleLoginSuccess = (user: AdminUser) => {
     setAdminUser(user);
+    setSessionNotice(null);
     setCurrentPage('admin');
   };
 
@@ -147,6 +185,7 @@ export default function App() {
           <AdminLoginPage 
             onLoginSuccess={handleLoginSuccess}
             setCurrentPage={setCurrentPage}
+            sessionNotice={sessionNotice}
           />
           <Footer setCurrentPage={setCurrentPage} />
         </div>
@@ -265,6 +304,7 @@ export default function App() {
           <AdminLoginPage 
             onLoginSuccess={handleLoginSuccess}
             setCurrentPage={setCurrentPage}
+            sessionNotice={sessionNotice}
           />
         )}
       </main>

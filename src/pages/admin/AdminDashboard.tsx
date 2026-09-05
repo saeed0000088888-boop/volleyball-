@@ -124,11 +124,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <div className="text-[10px] text-slate-400">{adminUser.email}</div>
                 </div>
                 <button
+                  id="admin-dashboard-logout-btn"
                   onClick={onLogout}
-                  title="Sign Out of Admin"
-                  className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
+                  title="Sign out and lock administrator dashboard"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold transition shadow-sm"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Lock & Exit</span>
                 </button>
               </div>
             </div>

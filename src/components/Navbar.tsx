@@ -147,10 +147,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   id="nav-admin-logout-btn"
                   onClick={onLogout}
-                  title="Log out of Admin"
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
+                  title="Log out and lock admin session"
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition text-xs font-semibold"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Lock & Exit</span>
                 </button>
               </div>
             ) : (

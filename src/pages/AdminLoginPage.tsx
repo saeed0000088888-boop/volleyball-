@@ -8,7 +8,8 @@ import {
   Database,
   CheckCircle2,
   Eye,
-  EyeOff
+  EyeOff,
+  ShieldAlert
 } from 'lucide-react';
 import { supabaseService } from '../lib/supabase';
 import { AdminUser } from '../types';
@@ -16,11 +17,13 @@ import { AdminUser } from '../types';
 interface AdminLoginPageProps {
   onLoginSuccess: (user: AdminUser) => void;
   setCurrentPage: (page: string) => void;
+  sessionNotice?: string | null;
 }
 
 export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
   onLoginSuccess,
   setCurrentPage,
+  sessionNotice,
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -95,6 +98,13 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
               </span>
             )}
           </div>
+
+          {sessionNotice && (
+            <div className="p-3.5 rounded-xl bg-amber-950/50 border border-amber-800 text-amber-300 text-xs flex items-start gap-2.5">
+              <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <span>{sessionNotice}</span>
+            </div>
+          )}
 
           {error && (
             <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800 text-rose-300 text-xs flex items-start gap-2.5">

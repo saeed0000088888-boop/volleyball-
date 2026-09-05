@@ -251,6 +251,25 @@ function saveLocal<T>(key: string, value: T): void {
   }
 }
 
+// Helper: load from sessionStorage with fallback
+function loadSession<T>(key: string, fallback: T): T {
+  try {
+    const data = sessionStorage.getItem(key);
+    return data ? JSON.parse(data) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+// Helper: save to sessionStorage
+function saveSession<T>(key: string, value: T): void {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.error('Failed to save to sessionStorage', e);
+  }
+}
+
 export interface AdminCredentials {
   email: string;
   password: string;
@@ -355,7 +374,7 @@ class SupabaseService {
           email: updated.email,
           name: updated.name,
         };
-        saveLocal(STORAGE_KEYS.ADMIN_SESSION, updatedSession);
+        this.setAdminSession(updatedSession);
       }
 
       // If Supabase remote auth is active, update Supabase user password & profile
@@ -401,7 +420,7 @@ class SupabaseService {
             role: 'admin',
             name: data.user.user_metadata?.name || savedCreds.name || 'Tournament Director',
           };
-          saveLocal(STORAGE_KEYS.ADMIN_SESSION, adminUser);
+          this.setAdminSession(adminUser);
           return { user: adminUser, error: null };
         }
       } catch (err: any) {
@@ -417,7 +436,7 @@ class SupabaseService {
         role: 'admin',
         name: savedCreds.name,
       };
-      saveLocal(STORAGE_KEYS.ADMIN_SESSION, adminUser);
+      this.setAdminSession(adminUser);
       return { user: adminUser, error: null };
     }
 
@@ -432,11 +451,56 @@ class SupabaseService {
         role: 'admin',
         name: savedCreds.name || 'Tournament Director',
       };
-      saveLocal(STORAGE_KEYS.ADMIN_SESSION, adminUser);
+      this.setAdminSession(adminUser);
       return { user: adminUser, error: null };
     }
 
     return { user: null, error: 'Invalid administrator email or password. Please verify your credentials.' };
+  }
+
+  public getAdminSession(): AdminUser | null {
+    // 1. Clear any legacy persistent localStorage admin session so random visitors don't inherit it
+    try {
+      if (localStorage.getItem(STORAGE_KEYS.ADMIN_SESSION)) {
+        localStorage.removeItem(STORAGE_KEYS.ADMIN_SESSION);
+      }
+    } catch {}
+
+    // 2. Read tab-isolated sessionStorage
+    const stored = loadSession<{ user: AdminUser; expiresAt: number } | AdminUser | null>(
+      STORAGE_KEYS.ADMIN_SESSION,
+      null
+    );
+    if (!stored) return null;
+
+    // Check expiration (auto-logout after 15 minutes of inactivity)
+    if (typeof stored === 'object' && 'expiresAt' in stored && 'user' in stored) {
+      if (Date.now() > (stored as any).expiresAt) {
+        this.signOut();
+        return null;
+      }
+      return (stored as any).user;
+    }
+
+    return stored as AdminUser;
+  }
+
+  public setAdminSession(user: AdminUser): void {
+    const sessionData = {
+      user,
+      expiresAt: Date.now() + 15 * 60 * 1000, // 15-minute inactivity security window
+    };
+    saveSession(STORAGE_KEYS.ADMIN_SESSION, sessionData);
+  }
+
+  public touchAdminSession(): void {
+    const stored = loadSession<{ user: AdminUser; expiresAt: number } | null>(
+      STORAGE_KEYS.ADMIN_SESSION,
+      null
+    );
+    if (stored && stored.user) {
+      this.setAdminSession(stored.user);
+    }
   }
 
   public async signOut(): Promise<void> {
@@ -447,11 +511,10 @@ class SupabaseService {
         console.warn(e);
       }
     }
-    localStorage.removeItem(STORAGE_KEYS.ADMIN_SESSION);
-  }
-
-  public getAdminSession(): AdminUser | null {
-    return loadLocal<AdminUser | null>(STORAGE_KEYS.ADMIN_SESSION, null);
+    sessionStorage.removeItem(STORAGE_KEYS.ADMIN_SESSION);
+    try {
+      localStorage.removeItem(STORAGE_KEYS.ADMIN_SESSION);
+    } catch {}
   }
 
   // ==========================================
