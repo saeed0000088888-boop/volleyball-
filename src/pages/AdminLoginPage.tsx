@@ -5,7 +5,6 @@ import {
   Mail, 
   ArrowRight, 
   AlertCircle, 
-  Sparkles, 
   Database,
   CheckCircle2,
   Eye,
@@ -23,18 +22,11 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
   onLoginSuccess,
   setCurrentPage,
 }) => {
-  const currentCreds = supabaseService.getAdminCredentials();
-  const [email, setEmail] = useState(currentCreds.email || 'admin@tournament.edu');
-  const [password, setPassword] = useState(currentCreds.password || 'admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const creds = supabaseService.getAdminCredentials();
-    if (creds.email) setEmail(creds.email);
-    if (creds.password) setPassword(creds.password);
-  }, []);
 
   const config = supabaseService.getSupabaseConfig();
 
@@ -65,13 +57,6 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleQuickFill = () => {
-    const creds = supabaseService.getAdminCredentials();
-    setEmail(creds.email);
-    setPassword(creds.password);
-    setError(null);
   };
 
   return (
@@ -128,7 +113,8 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
                 <input
                   type="email"
                   required
-                  placeholder="admin@tournament.edu"
+                  autoComplete="username"
+                  placeholder="admin@college.edu"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900/80 text-white placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
@@ -155,7 +141,8 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  placeholder="Enter administrator password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-700 bg-slate-900/80 text-white placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
@@ -180,21 +167,6 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
               )}
             </button>
           </form>
-
-          {/* Quick Demo Helper */}
-          <div className="pt-4 border-t border-slate-800 text-center space-y-2">
-            <button
-              type="button"
-              onClick={handleQuickFill}
-              className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-bold transition underline"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Fill Active Administrator Credentials</span>
-            </button>
-            <p className="text-[11px] text-slate-400">
-              Active Login: <code className="bg-slate-900 px-1.5 py-0.5 rounded font-mono text-slate-300 border border-slate-800">{supabaseService.getAdminCredentials().email}</code> / <code className="bg-slate-900 px-1.5 py-0.5 rounded font-mono text-slate-300 border border-slate-800">{supabaseService.getAdminCredentials().password ? '••••••••' : 'admin123'}</code>
-            </p>
-          </div>
         </div>
 
         <div className="text-center">
