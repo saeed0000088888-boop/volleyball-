@@ -157,40 +157,79 @@ ALTER TABLE public.players ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.matches ENABLE ROW LEVEL SECURITY;
 
 -- 1. Public Read Policies (Public can view published teams, squads, matches, standings, tournament)
+DROP POLICY IF EXISTS "Public can view tournaments" ON public.tournaments;
 CREATE POLICY "Public can view tournaments" ON public.tournaments FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view settings" ON public.tournament_settings;
 CREATE POLICY "Public can view settings" ON public.tournament_settings FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view teams" ON public.teams;
 CREATE POLICY "Public can view teams" ON public.teams FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view players" ON public.players;
 CREATE POLICY "Public can view players" ON public.players FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view matches" ON public.matches;
 CREATE POLICY "Public can view matches" ON public.matches FOR SELECT USING (true);
 
 -- 2. Applications Policies:
 -- Public can INSERT their own application without auth:
+DROP POLICY IF EXISTS "Public can submit application" ON public.applications;
 CREATE POLICY "Public can submit application" ON public.applications 
   FOR INSERT WITH CHECK (true);
 
--- Only authenticated users (Admins) can SELECT, UPDATE, DELETE applications:
+-- Allow viewing, updating, deleting applications:
+DROP POLICY IF EXISTS "Admins can view applications" ON public.applications;
 CREATE POLICY "Admins can view applications" ON public.applications 
-  FOR SELECT TO authenticated USING (true);
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Admins can update applications" ON public.applications;
 CREATE POLICY "Admins can update applications" ON public.applications 
-  FOR UPDATE TO authenticated USING (true);
+  FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Admins can delete applications" ON public.applications;
 CREATE POLICY "Admins can delete applications" ON public.applications 
-  FOR DELETE TO authenticated USING (true);
+  FOR DELETE USING (true);
 
 -- 3. Admin Write Policies for Teams, Players, Matches, Settings
-CREATE POLICY "Admins can insert teams" ON public.teams FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Admins can update teams" ON public.teams FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "Admins can delete teams" ON public.teams FOR DELETE TO authenticated USING (true);
+DROP POLICY IF EXISTS "Admins can insert teams" ON public.teams;
+CREATE POLICY "Admins can insert teams" ON public.teams FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Admins can insert players" ON public.players FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Admins can update players" ON public.players FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "Admins can delete players" ON public.players FOR DELETE TO authenticated USING (true);
+DROP POLICY IF EXISTS "Admins can update teams" ON public.teams;
+CREATE POLICY "Admins can update teams" ON public.teams FOR UPDATE USING (true);
 
-CREATE POLICY "Admins can insert matches" ON public.matches FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Admins can update matches" ON public.matches FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "Admins can delete matches" ON public.matches FOR DELETE TO authenticated USING (true);
+DROP POLICY IF EXISTS "Admins can delete teams" ON public.teams;
+CREATE POLICY "Admins can delete teams" ON public.teams FOR DELETE USING (true);
 
-CREATE POLICY "Admins can update settings" ON public.tournament_settings FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "Admins can update tournament" ON public.tournaments FOR UPDATE TO authenticated USING (true);
+DROP POLICY IF EXISTS "Admins can insert players" ON public.players;
+CREATE POLICY "Admins can insert players" ON public.players FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admins can update players" ON public.players;
+CREATE POLICY "Admins can update players" ON public.players FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Admins can delete players" ON public.players;
+CREATE POLICY "Admins can delete players" ON public.players FOR DELETE USING (true);
+
+DROP POLICY IF EXISTS "Admins can insert matches" ON public.matches;
+CREATE POLICY "Admins can insert matches" ON public.matches FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admins can update matches" ON public.matches;
+CREATE POLICY "Admins can update matches" ON public.matches FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Admins can delete matches" ON public.matches;
+CREATE POLICY "Admins can delete matches" ON public.matches FOR DELETE USING (true);
+
+DROP POLICY IF EXISTS "Admins can insert settings" ON public.tournament_settings;
+CREATE POLICY "Admins can insert settings" ON public.tournament_settings FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admins can update settings" ON public.tournament_settings;
+CREATE POLICY "Admins can update settings" ON public.tournament_settings FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Admins can insert tournament" ON public.tournaments;
+CREATE POLICY "Admins can insert tournament" ON public.tournaments FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admins can update tournament" ON public.tournaments;
+CREATE POLICY "Admins can update tournament" ON public.tournaments FOR UPDATE USING (true);
 `;
 
 // Helper: load from localStorage with fallback
